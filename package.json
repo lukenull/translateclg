@@ -1,0 +1,15 @@
+{
+  "name": "clg",
+  "version": "1.0.0",
+  "description": "a",
+  "main": "ctrl.js",
+  "scripts": {
+    "test": "a"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "compromise": "^14.14.5",
+    "vite": "^7.3.1"
+  }
+}
