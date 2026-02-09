@@ -2,40 +2,36 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import spacy
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles # Import this
+import os
 
-# Load spaCy English model
 nlp = spacy.load("en_core_web_sm")
 
 app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Or ["http://localhost:3000"] for stricter
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# 1. MOUNT THE STATIC FILEROUTE
+# This makes everything inside the /static folder available at the root URL
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/")
+def read_index():
+    # Ensure this path points correctly to your file location
+    return FileResponse('static/index.html')
+
 class TextRequest(BaseModel):
     text: str
-
-@app.post("/parse")
-@app.post("/parse")
-def parse_text(request: TextRequest):
-    doc = nlp(request.text)
-
-    parsed = {
-        "text": doc.text,
-        "language": doc.lang_,
-        "tokens": [],
-        "sentences": [],
-        "noun_chunks": [],
-        "entities": []
-    }
-
-    # TOKENS — basically everything spaCy exposes per-token
-    for i, token in enumerate(doc):
-        parsed["tokens"].append({
-            "i": token.i,
+def getdict(token):
+    return {
+         "i": token.i,
             "text": token.text,
             "lemma": token.lemma_,
             "norm": token.norm_,
@@ -63,7 +59,24 @@ def parse_text(request: TextRequest):
             "ent_iob": token.ent_iob_,
             "morph": token.morph.to_dict(),
             "whitespace": token.whitespace_
-        })
+    }
+@app.post("/parse")
+
+def parse_text(request: TextRequest):
+    doc = nlp(request.text)
+
+    parsed = {
+        "text": doc.text,
+        "language": doc.lang_,
+        "tokens": [],
+        "sentences": [],
+        "noun_chunks": [],
+        "entities": []
+    }
+
+    # TOKENS — basically everything spaCy exposes per-token
+    for i, token in enumerate(doc):
+        parsed["tokens"].append(getdict(token))
 
     # SENTENCES
     for sent in doc.sents:
@@ -86,7 +99,8 @@ def parse_text(request: TextRequest):
                 "lemma": chunk.root.lemma_,
                 "pos": chunk.root.pos_,
                 "dep": chunk.root.dep_,
-                "tag": token.tag_
+                "tag": token.tag_,
+                "head": getdict(token.head)
             }
         })
 
